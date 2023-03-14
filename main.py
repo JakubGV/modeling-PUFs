@@ -1,31 +1,44 @@
-import time
-
 import pandas as pd
 import numpy as np
 
-from models import LogisticRegressionModel, SVMModel
+from sklearn.model_selection import train_test_split
 
-# Read the challenge data
-challenges = pd.read_csv('./data/APUF_XOR_Challenge_Parity_64_500000.csv', header=None)
-challenges = challenges.iloc[:, :65] #grab the 64 bits of the challenge
+from models import LogisticRegressionModel, RPropLogisticRegressionModel, SVMModel
 
-# Read the response data
-xor_2 = pd.read_csv('./data/2-xorpuf.csv', header=None)
+if __name__ == '__main__':
+    # Read the challenge data
+    challenges = pd.read_csv('./data/APUF_XOR_Challenge_Parity_64_500000.csv', header=None, engine='pyarrow')
+    challenges = challenges.iloc[:, :65] #grab the 65 bits of the challenge input
+    challenges = challenges.to_numpy() #2D array of shape (#challenges, #bits)
 
-# Select NUM_POINTS points
-NUM_POINTS = 20000
-x = challenges.iloc[:NUM_POINTS].to_numpy()
-y = np.ndarray.flatten(xor_2.iloc[:NUM_POINTS].to_numpy())
+    # Read the response data
+    xor_2_responses = pd.read_csv('./data/2-xorpuf.csv', header=None, engine='pyarrow')
+    xor_2_responses = np.ndarray.flatten(xor_2_responses.to_numpy()) #flatten into a 1D array
 
+    # Different number of points to try
+    #NUM_POINTS = (5000, 10000, 20000, 50000, 100000, 500000)
+    NUM_POINTS = [1000000]
 
-def train_and_test_model(model_type: str, x, y):
-    if model_type.upper() == 'LR':
-        model = LogisticRegressionModel()
-    elif model_type.upper() == 'SVM':
-        model = SVMModel()
-    
-    model.train(x, y)
-    model.score(x, y)
+    # Models to run
+    models = [LogisticRegressionModel(), RPropLogisticRegressionModel(), SVMModel()]
 
-train_and_test_model('LR', x, y)
-train_and_test_model('SVM', x, y)
+    for num_points in NUM_POINTS:
+        x = challenges[:num_points]
+        y = xor_2_responses[:num_points]
+        print(
+            "--------------------"
+            f"{num_points} points"
+            "--------------------"
+        )
+
+        x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=0)
+        for model in models:
+            training_time = model.train(x_train, y_train)
+            loss = model.loss(x_train, y_train)
+            accuracy = model.accuracy(x_test, y_test)
+            print(f"{model}\n"
+                  f"----------\n"
+                  f"Training took {training_time:.3f}s\n"
+                  f"Final training loss: {loss:.3f}\n"
+                  f"Testing accuracy: {accuracy:.2%}\n"
+            )

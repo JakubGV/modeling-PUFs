@@ -1,6 +1,8 @@
 import time
 import numpy as np
 
+from abc import ABC, abstractmethod
+
 from sklearn import svm
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import log_loss, hinge_loss, accuracy_score
@@ -9,11 +11,97 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.callbacks import EarlyStopping
 
-class Model:
-    def train(self, x_train, y_train) -> float:
+def timeit(func):
+    """Decorator that runs the passed function and returns the time taken to run
+        
+    Returns
+    -------
+    time: float
+        The time taken for the function to run
+    """
+    def inner(*args, **kwargs):
+        start = time.time()
+        func(*args, **kwargs)
+
+        return time.time() - start
+    return inner
+
+class Model(ABC):
+    @abstractmethod
+    def __str__(self) -> str:
+        pass
+    
+    @abstractmethod
+    def train(self, x_train, y_train) -> None:
+        """Trains the model
+        
+        Parameters
+        ----------
+        x_train: ndarray
+            The set of input values
+        y_train: ndarray
+            The correct outputs for the input values
+
+        Returns
+        -------
+        time: float
+            The time taken to train
+        """
         pass
 
-class LogisticRegressionModel:
+    @abstractmethod
+    def predict(self, x):
+        """Predicts using the trained model
+        
+        Parameters
+        ----------
+        x: ndarray
+            The set of input values
+
+        Returns
+        -------
+        predictions: ndarray
+            The predicted classifications (i.e., 0 or 1)
+        """
+        pass
+
+    @abstractmethod
+    def accuracy(self, x, y_true) -> float:
+        """Calculate the accuracy of the model
+        
+        Parameters
+        ----------
+        x: ndarray
+            The set of input values
+        y_true: ndarray
+            The correct outputs for the input values
+
+        Returns
+        -------
+        accuracy: float
+            The accuracy of the predicted outputs based on the true outputs
+        """
+        pass
+
+    @abstractmethod
+    def loss(self, x, y_true) -> float:
+        """Calculate the loss of the model
+        
+        Parameters
+        ----------
+        x: ndarray
+            The set of input values
+        y_true: ndarray
+            The correct outputs for the input values
+
+        Returns
+        -------
+        loss: float
+            The loss of the predicted outputs based on the true outputs
+        """
+        pass
+
+class LogisticRegressionModel(Model):
     """
     LogisticRegressionModel is a wrapper for sklearn's LogisticRegression
 
@@ -30,35 +118,32 @@ class LogisticRegressionModel:
         The model to train and make predictions with.
     """
     def __init__(self, solver='newton-cholesky', tol=1e-4):
+        super().__init__()
         self.model = LogisticRegression(solver=solver, tol=tol, random_state=0)
 
     def __str__(self) -> str:
         return "LogisticRegressionModel"
 
-    def train(self, x_train, y_train) -> float:
-        """Trains the model
-        
-        Parameters
-        ----------
-        x_train: ndarray
-            The set of input values
-        y_train: ndarray
-            The correct outputs for the input values
-
-        Returns
-        -------
-        time: float
-            The time taken to train
-        """
-        start = time.time()
+    @timeit
+    def train(self, x_train, y_train):
         self.model.fit(x_train, y_train)
-        
-        return time.time() - start
 
     def predict(self, x):
         return self.model.predict(x)
     
     def predict_proba(self, x):
+        """Predict the probabilities of the output using the trained model
+        
+        Parameters
+        ----------
+        x: ndarray
+            The set of input values
+
+        Returns
+        -------
+        predictions: ndarray
+            The predicted probabilities (i.e., continious from 0 to 1)
+        """
         return self.model.predict_proba(x)
     
     def accuracy(self, x, y_true) -> float:
@@ -70,16 +155,31 @@ class LogisticRegressionModel:
         y_pred = self.predict_proba(x)
 
         return log_loss(y_true, y_pred)
-    
-    def train_and_test(x_train, x_test, y_train, y_test) -> tuple:
-        pass
 
 """
 This contains code from Logistic-Regression-From-Scratch.
 Licensing details are provided in the [README](./README.md)
 It has been modified by me, Jakub Vogel.
 """
-class RPropLogisticRegressionModel:
+class RPropLogisticRegressionModel(Model):
+    """
+    RPropLogisticRegressionModel is an implementation of logistic regression from scratch using RProp gradient descent
+    
+    Parameters
+    ----------
+    tol : float
+        The tolerance, terminates training if the loss decreases by less than the tolerance
+    lr : float
+        The learning rate, sets the initial steps and bias gradient
+    etaminus: float
+        How much to multiplicatively decrease the weights
+    etaplus: float
+        How much to multiplicatively increase the weights
+    minstep: float
+        How much we can minimally decrease the weights
+    maxstep: float
+        How much we can maximally increase the weights
+    """
     def __init__(self, tol=1e-4, lr=0.01, etaminus=0.5, etaplus=1.2, minstep=1e-6, maxstep=50):
         self.losses = []
         self.train_accuracies = []
@@ -93,7 +193,9 @@ class RPropLogisticRegressionModel:
     def __str__(self) -> str:
         return "RPropLogisticRegressionModel"
 
-    def train(self, x_train, y_train, epochs=150) -> float:
+    @timeit
+    def train(self, x_train, y_train, epochs=300):
+        """Loosely based on PyTorch RProp [pseudocode](https://pytorch.org/docs/stable/generated/torch.optim.Rprop.html)"""
         # Initialize LR weights and bias
         self.weights = np.zeros(x_train.shape[1])
         self.prev_weight_gradients = np.zeros(x_train.shape[1])
@@ -104,7 +206,6 @@ class RPropLogisticRegressionModel:
         self.prev_bias_step = self.lr
 
         prev_loss = None
-        start = time.time()
         for i in range(epochs):
             prediction_probas = self.predict_proba(x_train)
             loss = self.loss(x_train, y_train)
@@ -119,8 +220,6 @@ class RPropLogisticRegressionModel:
                 prev_loss = loss
             elif (prev_loss - loss > 0) or (prev_loss - loss < self.tol):
                 break
-
-        return time.time() - start
 
     def predict(self, x):
         prediction_probas = self.predict_proba(x)
@@ -142,11 +241,6 @@ class RPropLogisticRegressionModel:
         y_pred = self.predict_proba(x)
 
         return log_loss(y_true, y_pred)
-        
-
-
-    def train_and_test(x_train, x_test, y_train, y_test) -> tuple:
-        pass
 
     def _sigmoid(self, x):
         return np.array([self._sigmoid_function(value) for value in x])
@@ -197,18 +291,24 @@ class RPropLogisticRegressionModel:
         else:
             curr_step = self.prev_bias_step
 
-class SupportVectorMachineModel:
+class SupportVectorMachineModel(Model):
+    """
+    SupportVectorMachineModel is a wrapper for sklearn's SVM
+
+    Attributes
+    ----------
+    model : sklearn.svm.SVC
+        The model to train and make predictions with.
+    """
     def __init__(self):
         self.model = svm.SVC()
 
     def __str__(self) -> str:
         return "SupportVectorMachineModel"
 
-    def train(self, x_train, y_train) -> None:
-        start = time.time()
+    @timeit
+    def train(self, x_train, y_train):
         self.model.fit(x_train, y_train)
-        
-        return time.time() - start
 
     def predict(self, x):
         return self.model.predict(x)
@@ -223,7 +323,20 @@ class SupportVectorMachineModel:
 
         return hinge_loss(y_true, y_pred)
     
-class DeepLearningModel:
+class DeepLearningModel(Model):
+    """
+    DeepLearningModel is an implementation of a basic feedforward neural network using Keras
+
+    Parameters
+    ----------
+    tol : float
+        The tolerance at which to stop iterating.
+    
+    Attributes
+    ----------
+    model : tensorflow.keras.Model
+        The model to train and make predictions with.
+    """
     def __init__(self, tol=1e-4):
         self.tol = tol
         self.model = Sequential()
@@ -236,12 +349,10 @@ class DeepLearningModel:
     def __str__(self) -> str:
         return "DeepLearningModel"
     
-    def train(self, x_train, y_train, epochs=300, batch_size=64, verbose=0) -> None:
-        start = time.time()
+    @timeit
+    def train(self, x_train, y_train, epochs=300, batch_size=64, verbose=0):
         callbacks = [EarlyStopping(monitor='loss', min_delta=self.tol)]
         self.model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size, verbose=verbose, callbacks=callbacks)
-
-        return time.time() - start
 
     def predict(self, x):
         return (self.model.predict(x) > 0.5).astype(int)

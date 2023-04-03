@@ -3,7 +3,7 @@ import numpy as np
 
 from sklearn.model_selection import train_test_split
 
-from models import LogisticRegressionModel, RPropLogisticRegressionModel, SVMModel, BasicDLModel
+from models import LogisticRegressionModel, RPropLogisticRegressionModel, SupportVectorMachineModel, DeepLearningModel
 
 if __name__ == '__main__':
     # Read the challenge data
@@ -12,17 +12,16 @@ if __name__ == '__main__':
     challenges = challenges.to_numpy() #2D array of shape (#challenges, #bits)
 
     # Read the response data
-    xor_2_responses = pd.read_csv('./data/2-xorpuf.csv', header=None, engine='pyarrow')
+    xor_2_responses = pd.read_csv('./data/2-xorapuf.csv', header=None, engine='pyarrow')
     xor_2_responses = np.ndarray.flatten(xor_2_responses.to_numpy()) #flatten into a 1D array
 
     # Different number of points to try
     NUM_POINTS = (5000, 10000, 20000, 50000, 100000, 500000)
 
     # Models to run
-    models = [LogisticRegressionModel(), RPropLogisticRegressionModel(), SVMModel(), BasicDLModel()]
-    epochs = (200, 200, 250, 300, 200, 100)
+    models = [LogisticRegressionModel(), RPropLogisticRegressionModel(), SupportVectorMachineModel(), DeepLearningModel()]
 
-    for i, num_points in enumerate(NUM_POINTS):
+    for num_points in NUM_POINTS:
         x = challenges[:num_points]
         y = xor_2_responses[:num_points]
         print(
@@ -33,13 +32,7 @@ if __name__ == '__main__':
 
         x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=0)
         for model in models:
-            if str(model) == "SVMModel" and num_points > 50000:
-                continue
-            
-            if str(model) == "BasicDLModel":
-                training_time = model.train(x_train, y_train, epochs=epochs[i])
-            else:
-                training_time = model.train(x_train, y_train)
+            training_time = model.train(x_train, y_train)
             loss = model.loss(x_train, y_train)
             accuracy = model.accuracy(x_test, y_test)
             print(f"{model}\n"

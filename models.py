@@ -7,6 +7,7 @@ from sklearn.metrics import log_loss, hinge_loss, accuracy_score
 
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
+from tensorflow.keras.callbacks import EarlyStopping
 
 class Model:
     def train(self, x_train, y_train) -> float:
@@ -196,12 +197,12 @@ class RPropLogisticRegressionModel:
         else:
             curr_step = self.prev_bias_step
 
-class SVMModel:
+class SupportVectorMachineModel:
     def __init__(self):
         self.model = svm.SVC()
 
     def __str__(self) -> str:
-        return "SVMModel"
+        return "SupportVectorMachineModel"
 
     def train(self, x_train, y_train) -> None:
         start = time.time()
@@ -222,8 +223,9 @@ class SVMModel:
 
         return hinge_loss(y_true, y_pred)
     
-class BasicDLModel:
-    def __init__(self):
+class DeepLearningModel:
+    def __init__(self, tol=1e-4):
+        self.tol = tol
         self.model = Sequential()
         self.model.add(Dense(12, input_shape=(65,), activation='relu'))
         self.model.add(Dense(8, activation='relu'))
@@ -232,11 +234,12 @@ class BasicDLModel:
         self.model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
     def __str__(self) -> str:
-        return "BasicDLModel"
+        return "DeepLearningModel"
     
-    def train(self, x_train, y_train, epochs=150, batch_size=64, verbose=0) -> None:
+    def train(self, x_train, y_train, epochs=300, batch_size=64, verbose=0) -> None:
         start = time.time()
-        self.model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size, verbose=verbose)
+        callbacks = [EarlyStopping(monitor='loss', min_delta=self.tol)]
+        self.model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size, verbose=verbose, callbacks=callbacks)
 
         return time.time() - start
 

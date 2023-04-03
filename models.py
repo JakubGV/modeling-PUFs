@@ -194,7 +194,7 @@ class RPropLogisticRegressionModel(Model):
         return "RPropLogisticRegressionModel"
 
     @timeit
-    def train(self, x_train, y_train, epochs=300):
+    def train(self, x_train, y_train, epochs=1000):
         """Loosely based on PyTorch RProp [pseudocode](https://pytorch.org/docs/stable/generated/torch.optim.Rprop.html)"""
         # Initialize LR weights and bias
         self.weights = np.zeros(x_train.shape[1])
@@ -301,22 +301,26 @@ class SupportVectorMachineModel(Model):
         The model to train and make predictions with.
     """
     def __init__(self):
-        self.model = svm.SVC()
+        self.model = svm.SVC(cache_size=2000)
 
     def __str__(self) -> str:
         return "SupportVectorMachineModel"
 
     @timeit
     def train(self, x_train, y_train):
+        if len(x_train) > 50000:
+            self.model = svm.LinearSVC(max_iter=2000)
+        else:
+            self.model = svm.SVC(cache_size=2000)
         self.model.fit(x_train, y_train)
 
     def predict(self, x):
         return self.model.predict(x)
     
-    def accuracy(self, x, y_true):
-        y_pred = self.predict(x)
-
-        return accuracy_score(y_true, y_pred)
+    def accuracy(self, x, y_true) -> float:
+        score = self.model.score(x, y_true)
+        
+        return score
         
     def loss(self, x, y_true):
         y_pred = self.model.decision_function(x)

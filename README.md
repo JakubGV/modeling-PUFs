@@ -6,6 +6,7 @@
 
 ## References
 * Rührmair, U., Sehnke, F., Sölter, J., Dror, G., Devadas, S., & Schmidhuber, J. (2010, October). Modeling attacks on physical unclonable functions. In *Proceedings of the 17th ACM conference on Computer and communications security* (pp. 237-249).
+* Santikellur, P., Bhattacharyay, A., & Chakraborty, R. S. (2019). Deep learning based model building attacks on arbiter PUF compositions. *Cryptology ePrint Archive*.
 
 In models.py, RPropLogisticRegression contains code from [Logistic-Regression-From-Scratch](https://github.com/casperbh96/Logistic-Regression-From-Scratch).
 

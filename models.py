@@ -5,6 +5,9 @@ from sklearn import svm
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import log_loss, hinge_loss, accuracy_score
 
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+
 class Model:
     def train(self, x_train, y_train) -> float:
         pass
@@ -79,7 +82,7 @@ class RPropLogisticRegressionModel:
     def __init__(self, tol=1e-4, lr=0.01, etaminus=0.5, etaplus=1.2, minstep=1e-6, maxstep=50):
         self.losses = []
         self.train_accuracies = []
-        self.tol = 1e-4
+        self.tol = tol
         self.lr = lr
         self.etaminus = etaminus
         self.etaplus = etaplus
@@ -218,3 +221,34 @@ class SVMModel:
         y_pred = self.model.decision_function(x)
 
         return hinge_loss(y_true, y_pred)
+    
+class BasicDLModel:
+    def __init__(self):
+        self.model = Sequential()
+        self.model.add(Dense(12, input_shape=(65,), activation='relu'))
+        self.model.add(Dense(8, activation='relu'))
+        self.model.add(Dense(1, activation='sigmoid'))
+
+        self.model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+
+    def __str__(self) -> str:
+        return "BasicDLModel"
+    
+    def train(self, x_train, y_train, epochs=150, batch_size=64, verbose=0) -> None:
+        start = time.time()
+        self.model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size, verbose=verbose)
+
+        return time.time() - start
+
+    def predict(self, x):
+        return (self.model.predict(x) > 0.5).astype(int)
+
+    def accuracy(self, x, y_true):
+        _, accuracy = self.model.evaluate(x, y_true, verbose=0)
+
+        return accuracy
+
+    def loss(self, x, y_true):
+        loss, _ = self.model.evaluate(x, y_true, verbose=0)
+
+        return loss

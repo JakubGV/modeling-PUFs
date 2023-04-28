@@ -67,7 +67,7 @@ def run_on_my_data():
     challenges = challenges.iloc[:, :65] #grab the 65 bits of the challenge
 
     # Read the response data
-    xor_2 = pd.read_csv('../data/2-xorpuf.csv', header=None)
+    xor_2 = pd.read_csv('../data/2-xorapuf.csv', header=None)
 
     # Select NUM_POINTS points
     NUM_POINTS = 20000

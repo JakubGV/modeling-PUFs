@@ -5,6 +5,7 @@
 
 
 ## References
+* Riedmiller, M., & Braun, H. (1993). A direct adaptive method for faster backpropagation learning: The RPROP algorithm. *IEEE International Conference on Neural Networks*. https://doi.org/10.1109/icnn.1993.298623
 * Rührmair, U., Sehnke, F., Sölter, J., Dror, G., Devadas, S., & Schmidhuber, J. (2010, October). Modeling attacks on physical unclonable functions. In *Proceedings of the 17th ACM conference on Computer and communications security* (pp. 237-249).
 * Santikellur, P., Bhattacharyay, A., & Chakraborty, R. S. (2019). Deep learning based model building attacks on arbiter PUF compositions. *Cryptology ePrint Archive*.
 

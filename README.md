@@ -1,8 +1,9 @@
 # Modeling-PUFs
 
+## Abstract
+Physical unclonable functions (PUFs) are hardware devices that produce unique responses to challenges to authenticate users. However, it has been demonstrated that these devices are vulnerable to machine learning modeling attacks in which correct responses to challenges can be predicted with high accuracy. This development project recreates previously successful modeling techniques and assesses their capability on up to 5-XORed arbiter PUFs by measuring each model’s accuracy and training time. It demonstrates that deep learning models are the most effective method and can learn each APUF composition whereas simpler models like logistic regression and support vector machines are successfully defended by XORing APUFs.
 
-
-
+Please see the associated [research paper](./Modeling_Arbiter_PUFs.pdf) to learn more about PUFs, the methods used, and the results.
 
 ## References
 * Riedmiller, M., & Braun, H. (1993). A direct adaptive method for faster backpropagation learning: The RPROP algorithm. *IEEE International Conference on Neural Networks*. https://doi.org/10.1109/icnn.1993.298623
